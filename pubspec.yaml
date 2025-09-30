@@ -59,7 +59,7 @@ dependencies:
   sqflite:
   path:
   http:
-
+  change_app_package_name:
 
 
 
