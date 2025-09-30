@@ -71,80 +71,78 @@ class EmployeeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Bounce(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: kWhite,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              spreadRadius: 2,
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextWidget(text: "Name:".tr),
-                TextWidget(
-                  text: employee['name'] ?? 'Unknown',
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: kWhite,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextWidget(text: "Name:".tr),
+              TextWidget(
+                text: employee['name'] ?? 'Unknown',
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextWidget(text: "Code:".tr),
+              TextWidget(
+                text: employee['emp_code'] ?? 'N/A',
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextWidget(text: "Role:".tr),
+              TextWidget(
+                text: employee['role'] ?? 'N/A',
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextWidget(text: "department:".tr),
+              TextWidget(
+                text: employee['department']?['name'] ?? 'N/A',
+              ),
+            ],
+          ),
+          // Reassign Supervisor
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: CustomDropDown(
+                  hint: 'Reassign Supervisor'.tr,
+                  items: controller.allSupervisors.map((sup) => sup['name'] as String).toList(),
+                  selectedValue: null,
+                  onChanged: (value) {
+                    final supId = controller.allSupervisors.firstWhere((sup) => sup['name'] == value)['id'];
+                    controller.assignEmployeeToSupervisor(employee['id'], supId);
+                  },
                 ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextWidget(text: "Code:".tr),
-                TextWidget(
-                  text: employee['emp_code'] ?? 'N/A',
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextWidget(text: "Role:".tr),
-                TextWidget(
-                  text: employee['role'] ?? 'N/A',
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextWidget(text: "department:".tr),
-                TextWidget(
-                  text: employee['department']?['name'] ?? 'N/A',
-                ),
-              ],
-            ),
-            // Reassign Supervisor
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: CustomDropDown(
-                    hint: 'Reassign Supervisor'.tr,
-                    items: controller.allSupervisors.map((sup) => sup['name'] as String).toList(),
-                    selectedValue: null,
-                    onChanged: (value) {
-                      final supId = controller.allSupervisors.firstWhere((sup) => sup['name'] == value)['id'];
-                      controller.assignEmployeeToSupervisor(employee['id'], supId);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

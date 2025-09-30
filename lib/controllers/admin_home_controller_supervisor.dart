@@ -1,4 +1,5 @@
 // File: controllers/admin_supervisors_controller.dart
+import 'package:attendance_app/constants/app_colors.dart';
 import 'package:attendance_app/services/superbase_services.dart';
 import 'package:get/get.dart';
 
@@ -7,7 +8,8 @@ class AdminSupervisorsController extends GetxController {
 
   final RxList<Map<String, dynamic>> supervisors = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> departments = <Map<String, dynamic>>[].obs;
-  final RxList<Map<String, dynamic>> officeLocations = <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> officeLocations =
+      <Map<String, dynamic>>[].obs;
   final RxString selectedDepartment = 'All'.obs;
   final RxString selectedLocation = 'All'.obs;
   final RxBool isLoading = true.obs;
@@ -53,14 +55,23 @@ class AdminSupervisorsController extends GetxController {
   Future<void> fetchSupervisors() async {
     isLoading.value = true;
     try {
-      String? depId = selectedDepartment.value != 'All' 
-          ? departments.firstWhere((dep) => dep['name'] == selectedDepartment.value, orElse: () => {'id': null})['id']
+      String? depId = selectedDepartment.value != 'All'
+          ? departments.firstWhere(
+              (dep) => dep['name'] == selectedDepartment.value,
+              orElse: () => {'id': null},
+            )['id']
           : null;
-      String? locId = selectedLocation.value != 'All' 
-          ? officeLocations.firstWhere((loc) => loc['name'] == selectedLocation.value, orElse: () => {'id': null})['id']
+      String? locId = selectedLocation.value != 'All'
+          ? officeLocations.firstWhere(
+              (loc) => loc['name'] == selectedLocation.value,
+              orElse: () => {'id': null},
+            )['id']
           : null;
       print('Fetching supervisors with depId: $depId, locId: $locId');
-      final supList = await _supabaseService.getSupervisors(departmentId: depId, locationId: locId);
+      final supList = await _supabaseService.getSupervisors(
+        departmentId: depId,
+        locationId: locId,
+      );
       supervisors.assignAll(supList);
       print('Supervisors fetched: $supList');
     } catch (e) {
@@ -86,10 +97,13 @@ class AdminSupervisorsController extends GetxController {
   Future<void> assignSupervisorToDepartment(String supId, String depId) async {
     try {
       await _supabaseService.assignSupervisorToDepartment(supId, depId);
-      Get.snackbar('Success', 'Department assigned successfully');
       fetchSupervisors();
     } catch (e) {
-      Get.snackbar('Error', 'Failed to assign department: $e');
+      Get.snackbar(
+        backgroundColor: kWhite,
+        'Error',
+        'Failed to assign department: $e',
+      );
     }
   }
 }

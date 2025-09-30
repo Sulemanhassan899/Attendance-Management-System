@@ -2,6 +2,7 @@ import 'package:attendance_app/constants/app_colors.dart';
 import 'package:attendance_app/services/auth_services.dart';
 import 'package:attendance_app/services/geo_fence_services.dart';
 import 'package:attendance_app/services/language_controller.dart';
+import 'package:attendance_app/services/notification_service.dart';
 import 'package:attendance_app/services/offline_local_storage.dart';
 import 'package:attendance_app/services/superbase_services.dart';
 import 'package:attendance_app/view/screens/login/login_wrapper.dart';
@@ -30,6 +31,7 @@ void main() async {
     Get.put(GeoFenceService()); // Moved before OfflineLocalStorageService
     Get.put(OfflineLocalStorageService());
     await Get.find<OfflineLocalStorageService>().init(); // Ensure async init
+    Get.put(NotificationService());
     Get.put(AuthService());
     Get.put(LanguageController());
   } catch (e) {
@@ -50,6 +52,8 @@ class MyApp extends StatelessWidget {
       debugShowMaterialGrid: false,
   translations: AppTranslations(),
   locale: const Locale('en', 'US'),
+        defaultTransition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 500),
   fallbackLocale: const Locale('en', 'US'),
       themeMode: ThemeMode.light,
       home: LoginWrapper(),

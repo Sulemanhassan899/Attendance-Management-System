@@ -121,5 +121,9 @@ class Assets {
   /// Assets for imagesSearchWhite
   /// assets/images/search_white.png
   static const String imagesSearchWhite = "assets/images/search_white.png";
+
+  /// Assets for imagesTrash
+  /// assets/images/trash.png
+  static const String imagesTrash = "assets/images/trash.png";
 }
 

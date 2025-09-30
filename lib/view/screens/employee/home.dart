@@ -3,6 +3,7 @@
 import 'package:attendance_app/constants/app_colors.dart';
 import 'package:attendance_app/generated/assets.dart';
 import 'package:attendance_app/view/screens/login/login.dart';
+import 'package:attendance_app/view/screens/notification/notification.dart';
 import 'package:attendance_app/view/widgets/common_image_view_widget.dart';
 import 'package:attendance_app/view/widgets/my_button.dart';
 import 'package:attendance_app/view/widgets/text_widget.dart';
@@ -28,15 +29,23 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: kPrimaryColor,
         automaticallyImplyLeading: false,
-        actions: [
+          actions: [
           IconButton(
+            icon: const Icon(Icons.notifications  , color: kWhite),
+            onPressed: () async {
+                                     Get.to(() => const NotificationsScreen());
+
+            },
+          ),
+           IconButton(
             icon: const Icon(Icons.logout, color: kWhite),
             onPressed: () async {
               await controller.authService.logout();
-              Get.offAll(() =>  LoginScreen());
+              Get.offAll(() => LoginScreen());
             },
           ),
         ],
+     
       ),
       body: Obx(
         () => controller.isLoading.value
@@ -65,6 +74,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
+
+
+                      SizedBox(height: 10,),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +99,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // Display individual user info fields
                       Obx(
                         () => Column(
                           children: [
@@ -115,11 +126,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                    Obx(
-                        () =>controller.geofenceService.geofenceMessage.value.isNotEmpty
+                      Obx(
+                        () => controller.geofenceService.geofenceMessage.value.isNotEmpty
                             ? TextWidget(
-                                   text: controller.geofenceService.geofenceMessage.value.tr,
-                          color: kredColor,
+                                text: controller.geofenceService.geofenceMessage.value.tr,
+                                color: kredColor,
                                 paddingBottom: 16,
                                 paddingLeft: 16,
                                 paddingRight: 16,
@@ -160,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         buttonText: "view_history".tr,
                         backgroundColor: kPrimaryColor,
                       ),
+                    
                     ],
                   ),
                 ),

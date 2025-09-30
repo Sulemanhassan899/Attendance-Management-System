@@ -60,6 +60,8 @@ dependencies:
   path:
   http:
   change_app_package_name:
+  flutter_local_notifications: 
+  flutter_slidable: 
 
 
 
