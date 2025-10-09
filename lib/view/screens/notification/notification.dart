@@ -21,36 +21,44 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final RxList<NotificationRecord> notifications = <NotificationRecord>[].obs;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications(); // Load notifications on screen initialization
+  }
 
+  Future<void> _loadNotifications() async {
+    final loadedNotifications = await NotificationService.getNotifications('All');
+    notifications.assignAll(loadedNotifications);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kWhite,
-  appBar: AppBar(
-  backgroundColor: kPrimaryColor,
-  title: TextWidget(text: "Notifications".tr, color: kWhite, size: 20),
-  leading: IconButton(
-    icon: const Icon(Icons.arrow_back, color: kWhite),
-    onPressed: () => Get.back(),
-  ),
-  actions: [
-    Obx(() => notifications.isNotEmpty
-        ? IconButton(
-            icon: const Icon(Icons.clear_all, color: kWhite),
-            tooltip: "Clear All",
-            onPressed: () async {
-              await NotificationService.clearAllNotifications();
-              notifications.clear(); // Update UI
-            },
-          )
-        : const SizedBox.shrink()),
-  ],
-),
-
+      appBar: AppBar(
+        backgroundColor: kPrimaryColor,
+        title: TextWidget(text: "Notifications".tr, color: kWhite, size: 20),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: kWhite),
+          onPressed: () => Get.back(),
+        ),
+        actions: [
+          Obx(() => notifications.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear_all, color: kWhite),
+                  tooltip: "Clear All",
+                  onPressed: () async {
+                    await NotificationService.clearAllNotifications();
+                    notifications.clear(); // Update UI
+                  },
+                )
+              : const SizedBox.shrink()),
+        ],
+      ),
       body: Column(
         children: [
-         Expanded(
+          Expanded(
             child: Obx(
               () => notifications.isEmpty
                   ? Center(
@@ -68,27 +76,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         return Slidable(
                           key: ValueKey(notification.id), // Unique key for each notification
                           endActionPane: ActionPane(
-                            motion: const ScrollMotion(),                      extentRatio: 0.3,
-
+                            motion: const ScrollMotion(),
+                            extentRatio: 0.3,
                             children: [
-                       
-                               Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: GestureDetector(
-                           
-                            onTap: () async {
-                              // Delete notification and refresh list
-                              await NotificationService.deleteNotification(notification.id);
-                            },
-                            child: CommonImageView(
-                              imagePath: Assets.imagesTrash,
-                              height: 60,
-                            ),
-                          ),
-                        ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    // Delete notification and refresh list
+                                    await NotificationService.deleteNotification(notification.id);
+                                    await _loadNotifications(); // Refresh UI
+                                  },
+                                  child: CommonImageView(
+                                    imagePath: Assets.imagesTrash,
+                                    height: 60,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
-                          child: Card( 
+                          child: Card(
                             color: kWhite,
                             margin: const EdgeInsets.symmetric(vertical: 8),
                             child: ListTile(

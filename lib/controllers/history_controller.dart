@@ -30,7 +30,7 @@ class HistoryController extends GetxController {
 
   void generateMonthOptions() {
     final now = DateTime.now();
-    final dateFormat = DateFormat('MMMM yyyy');
+    final dateFormat = DateFormat('MMM yyyy');
     monthOptions.clear();
     for (int i = 0; i < 12; i++) {
       final date = DateTime(now.year, now.month - i, 1);
@@ -42,7 +42,7 @@ class HistoryController extends GetxController {
     dateOptions.clear();
     if (month == null || month.isEmpty) return;
 
-    final monthFormat = DateFormat('MMMM yyyy');
+final monthFormat = DateFormat('MMM-yyyy');
     final selected = monthFormat.parse(month);
     final daysInMonth = DateTime(selected.year, selected.month + 1, 0).day;
 
@@ -75,7 +75,7 @@ class HistoryController extends GetxController {
         parsedDate,
       );
     } else if (selectedMonth.value != null && selectedMonth.value!.isNotEmpty) {
-      final dateFormat = DateFormat('MMMM yyyy');
+      final dateFormat = DateFormat('MMM yyyy');
       final parsedMonth = dateFormat.parse(selectedMonth.value!);
       fetchedLogs = await _supabaseService.getMonthlyAttendanceHistory(
         user.id,

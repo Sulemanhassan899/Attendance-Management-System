@@ -1,8 +1,8 @@
-import 'package:attendance_app/generated/assets.dart';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:intl/intl.dart';
+import 'package:attendance_app/services/permission_service.dart';
 
 class NotificationRecord {
   final int id;
@@ -41,9 +41,15 @@ class NotificationService {
   static const String _tableName = 'notifications';
 
   static Future<void> initialize() async {
+    // ADDED: Request notification permission first
+    final hasPermission = await PermissionService.checkNotificationPermission();
+    if (!hasPermission) {
+      print('Notification permission not granted - notifications may not work');
+    }
+
     // Initialize notification plugin
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings(Assets.imagesLogoNew);
+        AndroidInitializationSettings('@mipmap/ic_launcher');
         
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
@@ -72,6 +78,15 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
+    // ADDED: Check permission before showing notification
+    final hasPermission = await PermissionService.checkNotificationPermission();
+    if (!hasPermission) {
+      print('Cannot show notification - permission not granted');
+      // Still save to database even if we can't show notification
+      await _saveNotification(title, body);
+      return;
+    }
+
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'TopCity id',
@@ -147,13 +162,13 @@ class NotificationService {
       print('Error deleting notification: $e');
     }
   }
+  
   static Future<void> clearAllNotifications() async {
-  if (_db == null) await initialize();
-  try {
-    await _db!.delete(_tableName); // Delete all records
-  } catch (e) {
-    print('Error clearing notifications: $e');
+    if (_db == null) await initialize();
+    try {
+      await _db!.delete(_tableName); // Delete all records
+    } catch (e) {
+      print('Error clearing notifications: $e');
+    }
   }
-}
-
 }

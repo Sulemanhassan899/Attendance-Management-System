@@ -30,44 +30,35 @@ class LoginWrapper extends StatelessWidget {
         }
 
         if (snapshot.data == true) {
-          // User is logged in, now fetch their role
           return FutureBuilder<app_models.User?>(
-            future: _authService.getCurrentUser(), // Get current user
+            future: _authService.getCurrentUser(), 
             builder: (context, userSnapshot) {
               if (userSnapshot.connectionState == ConnectionState.waiting) {
-                // Show loading while fetching user data
                 return const Scaffold(
                   body: Center(child: CircularProgressIndicator()),
                 );
               }
 
               if (userSnapshot.data != null) {
-                // Check the role of the current user
                 final role = userSnapshot.data!.role;
 
                 if (role == 'employee') {
-                  // Navigate to HomeScreen if user is an employee
                   return HomeScreen();
                 } else if (role == 'supervisor') {
-                  // Navigate to SupervisorHomeScreen if user is a supervisor
                   return SupervisorHomeScreen();
                 } else if (role == 'admin') {
-                  // Navigate to AdminHomeScreen if user is an admin
                   return AdminHomeScreen();
                 } else {
-                  // Default case if role is unknown (you can handle it based on your use case)
                   return const Scaffold(
                     body: Center(child: Text('Role not recognized')),
                   );
                 }
               } else {
-                // If no user data found, go back to login
                 return LoginScreen();
               }
             },
           );
         } else {
-          // User is not logged in, show the login screen
           return LoginScreen();
         }
       },

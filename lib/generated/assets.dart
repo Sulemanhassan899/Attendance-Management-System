@@ -66,6 +66,10 @@ class Assets {
   /// assets/images/close.png
   static const String imagesClose = "assets/images/close.png";
 
+  /// Assets for imagesHide
+  /// assets/images/hide.png
+  static const String imagesHide = "assets/images/hide.png";
+
   /// Assets for imagesLogo1
   /// assets/images/logo1.png
   static const String imagesLogo1 = "assets/images/logo1.png";
@@ -125,5 +129,9 @@ class Assets {
   /// Assets for imagesTrash
   /// assets/images/trash.png
   static const String imagesTrash = "assets/images/trash.png";
+
+  /// Assets for imagesUnhide
+  /// assets/images/unhide.png
+  static const String imagesUnhide = "assets/images/unhide.png";
 }
 

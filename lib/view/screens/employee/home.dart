@@ -29,15 +29,12 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: kPrimaryColor,
         automaticallyImplyLeading: false,
-          actions: [
+        actions: [
           IconButton(
-            icon: const Icon(Icons.notifications  , color: kWhite),
-            onPressed: () async {
-                                     Get.to(() => const NotificationsScreen());
-
-            },
+            icon: const Icon(Icons.notifications, color: kWhite),
+            onPressed: () => Get.to(() => const NotificationsScreen()),
           ),
-           IconButton(
+          IconButton(
             icon: const Icon(Icons.logout, color: kWhite),
             onPressed: () async {
               await controller.authService.logout();
@@ -45,135 +42,107 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ],
-     
       ),
       body: Obx(
         () => controller.isLoading.value
-            ? Center(child: CircularProgressIndicator(color: kPrimaryColor))
+            ? const Center(child: CircularProgressIndicator(color: kPrimaryColor))
             : SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Obx(
-                            () => TextWidget(
-                              onTap: () {
-                                controller.languageController.toggleLanguage();
-                              },
-                              text: controller.languageController.currentLanguage.value,
-                              size: 14,
-                              paddingRight: 1,
-                              textAlign: TextAlign.center,
-                              color: kPrimaryColor,
-                            ),
-                          ),
-                        ],
-                      ),
-
-
-                      SizedBox(height: 10,),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            child: CommonImageView(
-                              imagePath: Assets.imagesLogoNew,
-                              height: 150,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Obx(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Obx(
                         () => TextWidget(
-                          text:
-                              '${'welcome'.tr} ${controller.authService.currentUser.value?.name ?? "User"}',
-                          size: 24,
-                          textAlign: TextAlign.center,
+                          onTap: () => controller.languageController.toggleLanguage(),
+                          text: controller.languageController.currentLanguage.value,
+                          size: 14,
+                          color: kPrimaryColor,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Obx(
-                        () => Column(
-                          children: [
-                            TextWidget(
-                              text: controller.empCode.value,
-                              paddingBottom: 8,
-                              paddingTop: 16,
-                            ),
-                            TextWidget(
-                              text: controller.name.value,
-                              paddingBottom: 8,
-                            ),
-                            TextWidget(
-                              text: controller.role.value,
-                              paddingBottom: 8,
-                            ),
-                            TextWidget(
-                              text: controller.department.value,
-                              paddingBottom: 8,
-                            ),
-                            TextWidget(
-                              text: controller.supervisor.value,
-                              paddingBottom: 16,
-                            ),
-                          ],
-                        ),
+                    ),
+                    const SizedBox(height: 10),
+                    Center(
+                      child: CommonImageView(
+                        imagePath: Assets.imagesLogoNew,
+                        height: 150,
                       ),
-                      Obx(
-                        () => controller.geofenceService.geofenceMessage.value.isNotEmpty
-                            ? TextWidget(
-                                text: controller.geofenceService.geofenceMessage.value.tr,
-                                color: kredColor,
-                                paddingBottom: 16,
-                                paddingLeft: 16,
-                                paddingRight: 16,
-                              )
-                            : const SizedBox.shrink(),
+                    ),
+                    const SizedBox(height: 10),
+                    Obx(
+                      () => TextWidget(
+                        text:
+                            '${'welcome'.tr} ${controller.authService.currentUser.value?.name ?? "User"}',
+                        size: 24,
+                        textAlign: TextAlign.center,
                       ),
-                      Obx(
-                        () => controller.message.value.isNotEmpty
-                            ? TextWidget(
-                                text: controller.message.value.tr,
-                                color: controller.messageColor.value,
-                                paddingBottom: 16,
-                                paddingLeft: 16,
-                                paddingRight: 16,
-                              )
-                            : const SizedBox.shrink(),
+                    ),
+                    const SizedBox(height: 16),
+                    Obx(
+                      () => Column(
+                        children: [
+                          TextWidget(text: controller.empCode.value),
+                          TextWidget(text: controller.name.value),
+                          TextWidget(text: controller.role.value),
+                          TextWidget(text: controller.department.value),
+                          TextWidget(text: controller.supervisor.value),
+                        ],
                       ),
-                      const SizedBox(height: 20),
-                      ButtonWidget(
-                        onTap: controller.clockIn,
-                        fontColor: kWhite,
-                        buttonText: "clock_in".tr,
-                        backgroundColor: kPrimaryColor,
-                      ),
-                      const SizedBox(height: 20),
-                      ButtonWidget(
-                        onTap: controller.clockOut,
-                        fontColor: kWhite,
-                        buttonText: "clock_out".tr,
-                        backgroundColor: kPrimaryColor,
-                      ),
-                      const SizedBox(height: 20),
-                      ButtonWidget(
-                        onTap: () {
-                          Get.to(() => const HistoryScreen());
-                        },
-                        fontColor: kWhite,
-                        buttonText: "view_history".tr,
-                        backgroundColor: kPrimaryColor,
-                      ),
-                    
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 20),
+                    Obx(
+                      () => controller.message.value.isNotEmpty
+                          ? TextWidget(
+                              text: controller.message.value.tr,
+                              color: controller.messageColor.value,
+                              paddingTop: 10,
+                              textAlign: TextAlign.center,
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Clock In Button
+                    Obx(() => ButtonWidget(       fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                          onTap: controller.isClockedIn.value
+                              ? null
+                              : () async => await controller.clockIn(),
+                          fontColor: kWhite,
+                          buttonText: controller.clockInButtonText.value,
+                          backgroundColor: controller.isClockedIn.value
+                              ? kGreyColor
+                              : kgreenColor,
+                        )),
+                    const SizedBox(height: 20),
+
+                    // Clock Out Button
+                    Obx(() => ButtonWidget(       fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                          onTap: controller.isClockedIn.value
+                              ? () async => await controller.clockOut()
+                              : null,
+                          fontColor: kWhite,
+                          buttonText: controller.clockOutButtonText.value,
+                          backgroundColor: controller.isClockedIn.value
+                              ? Colors.red
+                              : kGreyColor,
+                        )),
+
+                    // Live Duration Display
+                 
+                    const SizedBox(height: 20),
+
+                    // View History
+                    ButtonWidget(       fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      onTap: () => Get.to(() => const HistoryScreen()),
+                      fontColor: kWhite,
+                      buttonText: "view_history".tr,
+                      backgroundColor: kPrimaryColor,
+                    ),
+                  ],
                 ),
               ),
       ),

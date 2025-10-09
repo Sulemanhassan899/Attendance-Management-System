@@ -15,6 +15,7 @@ analyzer:
     dead_code: ignore
     constant_identifier_names: ignore
     use_key_in_widget_constructors: ignore
+    non_constant_identifier_names: ignore
 include: package:flutter_lints/flutter.yaml
 
 linter:
