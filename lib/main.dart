@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() async {
+void main1() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Supabase
@@ -20,7 +20,6 @@ void main() async {
       anonKey:
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwdnl5cHZpdnF3anl4dG1xZWxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4ODgzNTQsImV4cCI6MjA3MjQ2NDM1NH0.IF-UZKeo8HcBQ2XElB3j0HxfQVFWcXw8S1HvRovcsvM',
     );
- 
   } catch (e) {
     print('Error initializing Supabase: $e');
   }
@@ -28,7 +27,7 @@ void main() async {
   // Initialize services in correct order
   try {
     Get.put(SupabaseService());
-    Get.put(GeoFenceService()); // Moved before OfflineLocalStorageService
+    Get.put(GeoFenceService());
     Get.put(OfflineLocalStorageService());
     await Get.find<OfflineLocalStorageService>().init(); // Ensure async init
     Get.put(NotificationService());
@@ -41,6 +40,40 @@ void main() async {
   runApp(const MyApp());
 }
 
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Supabase.initialize(
+      url: 'https://cpvyypvivqwjyxtmqeli.supabase.co',
+      anonKey:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwdnl5cHZpdnF3anl4dG1xZWxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4ODgzNTQsImV4cCI6MjA3MjQ2NDM1NH0.IF-UZKeo8HcBQ2XElB3j0HxfQVFWcXw8S1HvRovcsvM',
+    );
+    print('✅ Supabase initialized successfully');
+  } catch (e) {
+    print('❌ Error initializing Supabase: $e');
+  }
+  try {
+    Get.put(SupabaseService());
+    print('✅ SupabaseService registered');
+    Get.put(GeoFenceService());
+    print('✅ GeoFenceService registered');
+    final offlineService = Get.put(OfflineLocalStorageService());
+    await offlineService.init();
+    print('✅ OfflineLocalStorageService initialized');
+    Get.put(NotificationService());
+    print('✅ NotificationService registered');
+    Get.put(AuthService());
+    print('✅ AuthService registered');
+    Get.put(LanguageController());
+    print('✅ LanguageController registered');
+  } catch (e, s) {
+    print('❌ Error initializing services: $e');
+    print(s);
+  }
+  runApp(const MyApp());
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -50,11 +83,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(useMaterial3: true, scaffoldBackgroundColor: kWhite),
       debugShowCheckedModeBanner: false,
       debugShowMaterialGrid: false,
-  translations: AppTranslations(),
-  locale: const Locale('en', 'US'),
-        defaultTransition: Transition.fadeIn,
+      translations: AppTranslations(),
+      locale: const Locale('en', 'US'),
+      defaultTransition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 500),
-  fallbackLocale: const Locale('en', 'US'),
+      fallbackLocale: const Locale('en', 'US'),
       themeMode: ThemeMode.light,
       home: LoginWrapper(),
     );

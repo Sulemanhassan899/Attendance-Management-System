@@ -4,15 +4,41 @@ import 'dart:math' as math;
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/geo_fence_model.dart';
+import 'offline_local_storage.dart';
+import 'superbase_services.dart';
 
 class GeoFenceService extends GetxService {
   final RxString geofenceMessage = ''.obs;
   List<Geofence> _geofences = [];
   static const double REQUIRED_RADIUS = 100.0; // meters
 
-  /// Initialize geofences
-  Future<void> setupGeofences(List<Geofence> geofences) async {
-    _geofences = List.from(geofences);
+  /// Initialize geofences, fetching from local storage or Supabase
+  Future<void> setupGeofences([List<Geofence>? geofences]) async {
+    final offlineService = Get.find<OfflineLocalStorageService>();
+    final supabaseService = Get.find<SupabaseService>();
+
+    if (geofences != null && geofences.isNotEmpty) {
+      _geofences = List.from(geofences);
+      await offlineService.saveGeofences(geofences); // Store provided geofences locally
+      geofenceMessage.value = ' ';
+      print('Geofences set up from provided list: ${geofences.length} geofences');
+    } else {
+      // Try to load from local storage first
+      _geofences = await offlineService.getStoredGeofences();
+      if (_geofences.isEmpty) {
+        // Fallback to fetching from Supabase if local storage is empty
+        _geofences = await supabaseService.getGeofences();
+        if (_geofences.isNotEmpty) {
+          await offlineService.saveGeofences(_geofences); // Store fetched geofences
+          print('Geofences fetched from Supabase and stored: ${_geofences.length}');
+        } else {
+          print('No geofences available from Supabase or local storage');
+          geofenceMessage.value = 'no_geofences_available'.tr;
+        }
+      } else {
+        print('Geofences loaded from local storage: ${_geofences.length}');
+      }
+    }
     geofenceMessage.value = ' ';
   }
 
@@ -47,66 +73,103 @@ class GeoFenceService extends GetxService {
     return false;
   }
 
-  /// Get current position with permission handling
-  Future<Position> getCurrentPosition({bool debug = false}) async {
+  /// Get current position with permission handling, falling back to Supabase if denied
+  Future<Map<String, dynamic>> getCurrentPosition({bool debug = false, required String empCode}) async {
     if (debug) {
-      return Position(
-        latitude: 33.577500,
-        longitude: 72.869700,
-        timestamp: DateTime.now(),
-        accuracy: 1.0,
-        altitude: 0.0,
-        heading: 0.0,
-        speed: 0.0,
-        speedAccuracy: 0.0,
-        altitudeAccuracy: 10,
-        headingAccuracy: 10,
-      );
+      return {
+        'success': true,
+        'latitude': 33.577500,
+        'longitude': 72.869700,
+        'source': 'debug',
+      };
     }
 
     LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
+    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        geofenceMessage.value = 'error_location_permission_denied'.tr;
-        throw Exception('error_location_permission_denied'.tr);
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        // Fallback to Supabase last known location
+        final userLocation = await Get.find<SupabaseService>().getUserLocation(empCode);
+        if (userLocation != null && userLocation['lat'] != null && userLocation['lon'] != null) {
+          print('Using last known location from Supabase for empCode: $empCode');
+          return {
+            'success': true,
+            'latitude': userLocation['lat'] as double,
+            'longitude': userLocation['lon'] as double,
+            'source': 'supabase',
+          };
+        } else {
+          geofenceMessage.value = 'error_no_location_data'.tr;
+          return {
+            'success': false,
+            'message': 'error_no_location_data'.tr,
+          };
+        }
       }
     }
 
-    return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-  }
-
-  /// Clock in/out based on geofence validation
-  Future<Map<String, dynamic>> clockInOut({bool debug = false, List<Geofence>? geofences}) async {
     try {
-      final position = await getCurrentPosition(debug: debug);
-
-      final isWithinGeofence = isInsideGeofence(
-        position.latitude,
-        position.longitude,
-        geofences ?? _geofences,
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
       );
-
-      if (isWithinGeofence) {
-        final action = 'Clocked ${DateTime.now().hour < 12 ? 'in' : 'out'} successfully'.tr;
+      return {
+        'success': true,
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'source': 'live',
+      };
+    } catch (e) {
+      // Fallback to Supabase if live location fails
+      final userLocation = await Get.find<SupabaseService>().getUserLocation(empCode);
+      if (userLocation != null && userLocation['lat'] != null && userLocation['lon'] != null) {
+        print('Live location failed, using Supabase location for empCode: $empCode');
         return {
           'success': true,
-          'message': action,
-          'timestamp': DateTime.now().toIso8601String(),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': geofenceMessage.value,
+          'latitude': userLocation['lat'] as double,
+          'longitude': userLocation['lon'] as double,
+          'source': 'supabase',
         };
       }
-    } catch (e) {
+      geofenceMessage.value = 'error_location_fetch_failed'.tr;
       return {
         'success': false,
-        'message': 'error_clock_in_out'.trParams({'error': e.toString()}),
+        'message': 'error_location_fetch_failed'.trParams({'error': e.toString()}),
+      };
+    }
+  }
+
+  /// Validate location for clock-in/out, using stored geofences
+  Future<Map<String, dynamic>> validateLocationForClockAction({
+    bool debug = false,
+    required String empCode,
+    List<Geofence>? geofences,
+  }) async {
+    final positionResult = await getCurrentPosition(debug: debug, empCode: empCode);
+    if (!positionResult['success']) {
+      return {
+        'success': false,
+        'message': positionResult['message'],
+      };
+    }
+
+    final isWithinGeofence = isInsideGeofence(
+      positionResult['latitude'],
+      positionResult['longitude'],
+      geofences ?? _geofences,
+    );
+
+    if (isWithinGeofence) {
+      return {
+        'success': true,
+        'latitude': positionResult['latitude'],
+        'longitude': positionResult['longitude'],
+        'message': geofenceMessage.value,
+        'source': positionResult['source'],
+      };
+    } else {
+      return {
+        'success': false,
+        'message': geofenceMessage.value,
       };
     }
   }

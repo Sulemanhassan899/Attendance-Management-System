@@ -1,5 +1,3 @@
-
-
 import 'package:attendance_app/services/superbase_services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -10,6 +8,8 @@ import '../services/offline_local_storage.dart';
 import '../services/permission_service.dart';
 import '../services/language_controller.dart';
 import '../constants/app_colors.dart';
+import 'clock_in_controller.dart';
+import 'clock_out_controller.dart';
 
 class HomeController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
@@ -17,6 +17,8 @@ class HomeController extends GetxController {
   final GeoFenceService _geofenceService = Get.find<GeoFenceService>();
   final OfflineLocalStorageService _offlineService = Get.find<OfflineLocalStorageService>();
   final LanguageController _languageController = Get.find<LanguageController>();
+  final ClockInController _clockInController = ClockInController();
+  final ClockOutController _clockOutController = ClockOutController();
 
   final RxBool isLoading = true.obs;
   final RxString message = ''.obs;
@@ -119,150 +121,32 @@ class HomeController extends GetxController {
   }
 
   Future<void> checkClockInStatus() async {
-    final user = _authService.currentUser.value;
-    if (user == null) return;
-
-    try {
-      final userData = await _supabaseService.getUserByEmpCode(user.empCode);
-      if (userData == null) return;
-
-      final userId = userData['id'].toString();
-      final activeLog = await _supabaseService.getActiveLog(userId);
-      isClockedIn.value = activeLog != null;
-
-      // Update button text based on current state
-      clockInButtonText.value = isClockedIn.value ? "Clocked In" : "Clock In";
-      clockOutButtonText.value = isClockedIn.value ? "Clock Out" : "Clocked Out";
-    } catch (_) {}
+    await _clockInController.checkClockStatus(
+      isClockedIn: isClockedIn,
+      clockInText: clockInButtonText,
+      clockOutText: clockOutButtonText,
+    );
   }
 
   Future<void> clockIn() async {
-    final user = _authService.currentUser.value;
-    if (user == null) return;
-
-    clockInButtonText.value = "Clocking In...";
-
-    try {
-      final hasNetwork = await PermissionService.checkNetwork();
-      if (!hasNetwork) {
-        await _offlineService.clockInOffline(
-          empCode: user.empCode,
-          lat: user.lat ?? 0.0,
-          lon: user.lon ?? 0.0,
-        );
-        message.value = 'clock_in_saved_offline'.tr;
-        messageColor.value = Colors.blue;
-        await NotificationService.showNotification(
-          title: 'Clock-In Saved Offline',
-          body: 'Clock-in recorded offline. Will sync later.',
-        );
-        clockInButtonText.value = "Clocked In";
-        isClockedIn.value = true;
-        return;
-      }
-
-      final userData = await _supabaseService.getUserByEmpCode(user.empCode);
-      if (userData == null) return;
-
-      final userLat = userData['lat'] as double;
-      final userLon = userData['lon'] as double;
-      final userId = userData['id'].toString();
-
-      final activeLog = await _supabaseService.getActiveLog(userId);
-      if (activeLog != null) {
-        message.value = 'already_clocked_in'.tr;
-        messageColor.value = Colors.blue;
-        clockInButtonText.value = "Clocked In";
-        return;
-      }
-
-      final geofences = await _supabaseService.getGeofences();
-      final isInside = _geofenceService.isInsideGeofence(userLat, userLon, geofences);
-
-      if (isInside) {
-        await _supabaseService.clockIn(userId, userLat, userLon, 'present');
-        message.value = '${'clocked_in_successfully'.tr} ${user.name}';
-        messageColor.value = Colors.green;
-        await NotificationService.showNotification(
-          title: 'Clock-In Successful',
-          body: 'You have clocked in successfully.',
-        );
-        clockInButtonText.value = "Clocked In";
-        isClockedIn.value = true;
-      } else {
-        clockInButtonText.value = "Clock In";
-        message.value = _geofenceService.geofenceMessage.value;
-        messageColor.value = Colors.red;
-      }
-    } catch (_) {
-      clockInButtonText.value = "Clock In";
-      message.value = 'error_clocking_in'.tr;
-      messageColor.value = Colors.red;
-    }
+    await _clockInController.clockIn(
+      isClockingIn: RxBool(false),
+      clockInText: clockInButtonText,
+      clockOutText: clockOutButtonText,
+      isClockedIn: isClockedIn,
+      message: message,
+      messageColor: messageColor,
+    );
   }
 
   Future<void> clockOut() async {
-    final user = _authService.currentUser.value;
-    if (user == null) return;
-
-    clockOutButtonText.value = "Clocking Out...";
-
-    try {
-      final hasNetwork = await PermissionService.checkNetwork();
-      if (!hasNetwork) {
-        await _offlineService.clockOutOffline(
-          empCode: user.empCode,
-          lat: user.lat ?? 0.0,
-          lon: user.lon ?? 0.0,
-        );
-        message.value = 'clock_out_saved_offline'.tr;
-        messageColor.value = Colors.blue;
-        await NotificationService.showNotification(
-          title: 'Clock-Out Saved Offline',
-          body: 'Clock-out recorded offline. Will sync later.',
-        );
-        clockOutButtonText.value = "Clocked Out";
-        isClockedIn.value = false;
-        return;
-      }
-
-      final userData = await _supabaseService.getUserByEmpCode(user.empCode);
-      if (userData == null) return;
-
-      final userLat = userData['lat'] as double;
-      final userLon = userData['lon'] as double;
-      final userId = userData['id'].toString();
-
-      final activeLog = await _supabaseService.getActiveLog(userId);
-      if (activeLog == null) {
-        message.value = 'please_clock_in_first'.tr;
-        messageColor.value = Colors.blue;
-        clockOutButtonText.value = "Clock Out";
-        return;
-      }
-
-      final geofences = await _supabaseService.getGeofences();
-      final isInside = _geofenceService.isInsideGeofence(userLat, userLon, geofences);
-
-      if (isInside) {
-        await _supabaseService.clockOut(activeLog.id.toString(), userLat, userLon, 'present');
-        message.value = '${'clocked_out_successfully'.tr} ${user.name}';
-        messageColor.value = Colors.green;
-        await NotificationService.showNotification(
-          title: 'Clock-Out Successful',
-          body: 'You have clocked out successfully.',
-        );
-        clockOutButtonText.value = "Clocked Out";
-        isClockedIn.value = false;
-      } else {
-        clockOutButtonText.value = "Clock Out";
-        message.value = _geofenceService.geofenceMessage.value;
-        messageColor.value = Colors.red;
-      }
-    } catch (_) {
-      clockOutButtonText.value = "Clock Out";
-      message.value = 'error_clocking_out'.tr;
-      messageColor.value = Colors.red;
-    }
+    await _clockOutController.clockOut(
+      isClockingOut: RxBool(false),
+      clockInText: clockInButtonText,
+      clockOutText: clockOutButtonText,
+      isClockedIn: isClockedIn,
+      message: message,
+      messageColor: messageColor,
+    );
   }
 }

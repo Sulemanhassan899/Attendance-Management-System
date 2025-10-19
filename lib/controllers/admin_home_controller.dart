@@ -1,4 +1,3 @@
-
 import 'package:attendance_app/services/superbase_services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -8,6 +7,8 @@ import '../services/offline_local_storage.dart';
 import '../services/permission_service.dart';
 import '../services/language_controller.dart';
 import '../constants/app_colors.dart';
+import 'clock_in_controller.dart';
+import 'clock_out_controller.dart';
 
 class AdminHomeController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
@@ -17,6 +18,8 @@ class AdminHomeController extends GetxController {
       Get.find<OfflineLocalStorageService>();
   final LanguageController _languageController =
       Get.find<LanguageController>();
+  final ClockInController _clockInController = ClockInController();
+  final ClockOutController _clockOutController = ClockOutController();
 
   final RxBool isLoading = true.obs;
   final RxString message = ''.obs;
@@ -51,28 +54,11 @@ class AdminHomeController extends GetxController {
   }
 
   Future<void> _initializeClockStatus() async {
-    try {
-      final user = _authService.currentUser.value;
-      if (user == null) return;
-
-      final userData = await _supabaseService.getUserByEmpCode(user.empCode);
-      if (userData == null) return;
-
-      final userId = userData['id'].toString();
-      final activeLog = await _supabaseService.getActiveLog(userId);
-
-      if (activeLog != null) {
-        isClockedIn.value = true;
-        clockInText.value = "Clocked In".tr;
-        clockOutText.value = "Clock Out".tr;
-      } else {
-        isClockedIn.value = false;
-        clockInText.value = "Clock In".tr;
-        clockOutText.value = "Clocked Out".tr;
-      }
-    } catch (e) {
-      print('Error initializing clock status: $e');
-    }
+    await _clockInController.checkClockStatus(
+      isClockedIn: isClockedIn,
+      clockInText: clockInText,
+      clockOutText: clockOutText,
+    );
   }
 
   Future<void> init() async {
@@ -163,131 +149,25 @@ class AdminHomeController extends GetxController {
     }
   }
 
-  // ----------------------------------------------------------
-  // CLOCK IN
-  // ----------------------------------------------------------
   Future<void> clockIn() async {
-    if (isClockingIn.value) return;
-    isClockingIn.value = true;
-    clockInText.value = "Clocking In...";
-
-    final user = _authService.currentUser.value;
-    if (user == null) {
-      isClockingIn.value = false;
-      clockInText.value = "Clock In";
-      return;
-    }
-
-    try {
-      final hasNetwork = await PermissionService.checkNetwork();
-      final userData = await _supabaseService.getUserByEmpCode(user.empCode);
-      if (userData == null) throw Exception("User data not found.");
-
-      final userLat = userData['lat'] ?? 0.0;
-      final userLon = userData['lon'] ?? 0.0;
-      final userId = userData['id'].toString();
-      final activeLog = await _supabaseService.getActiveLog(userId);
-
-      if (activeLog != null) {
-        clockInText.value = "Clocked In";
-        isClockedIn.value = true;
-        isClockingIn.value = false;
-        return;
-      }
-
-      if (!hasNetwork) {
-        await _offlineService.clockInOffline(
-          empCode: user.empCode,
-          lat: userLat,
-          lon: userLon,
-        );
-        clockInText.value = "Clocked In (Offline)";
-        isClockedIn.value = true;
-        isClockingIn.value = false;
-        return;
-      }
-
-      final geofences = await _supabaseService.getGeofences();
-      final isInside =
-          _geofenceService.isInsideGeofence(userLat, userLon, geofences);
-      if (!isInside) throw Exception("Outside allowed area");
-
-      await _supabaseService.clockIn(userId, userLat, userLon, 'present');
-
-      clockInText.value = "Clocked In";
-      clockOutText.value = "Clock Out";
-      isClockedIn.value = true;
-    } catch (e) {
-      clockInText.value = "Clock In";
-      print('Clock-in error: $e');
-    } finally {
-      isClockingIn.value = false;
-    }
+    await _clockInController.clockIn(
+      isClockingIn: isClockingIn,
+      clockInText: clockInText,
+      clockOutText: clockOutText,
+      isClockedIn: isClockedIn,
+      message: message,
+      messageColor: messageColor,
+    );
   }
 
-  // ----------------------------------------------------------
-  // CLOCK OUT
-  // ----------------------------------------------------------
   Future<void> clockOut() async {
-    if (isClockingOut.value) return;
-    isClockingOut.value = true;
-    clockOutText.value = "Clocking Out...";
-
-    final user = _authService.currentUser.value;
-    if (user == null) {
-      isClockingOut.value = false;
-      clockOutText.value = "Clock Out";
-      return;
-    }
-
-    try {
-      final hasNetwork = await PermissionService.checkNetwork();
-      final userData = await _supabaseService.getUserByEmpCode(user.empCode);
-      if (userData == null) throw Exception("User data not found.");
-
-      final userLat = userData['lat'] ?? 0.0;
-      final userLon = userData['lon'] ?? 0.0;
-      final userId = userData['id'].toString();
-      final activeLog = await _supabaseService.getActiveLog(userId);
-
-      if (activeLog == null) {
-        clockOutText.value = "Clock Out";
-        isClockingOut.value = false;
-        return;
-      }
-
-      if (!hasNetwork) {
-        await _offlineService.clockOutOffline(
-          empCode: user.empCode,
-          lat: userLat,
-          lon: userLon,
-        );
-        clockOutText.value = "Clocked Out (Offline)";
-        isClockedIn.value = false;
-        isClockingOut.value = false;
-        return;
-      }
-
-      final geofences = await _supabaseService.getGeofences();
-      final isInside =
-          _geofenceService.isInsideGeofence(userLat, userLon, geofences);
-      if (!isInside) throw Exception("Outside allowed area");
-
-      await _supabaseService.clockOut(
-        activeLog.id.toString(),
-        userLat,
-        userLon,
-        'present',
-      );
-
-      clockOutText.value = "Clocked Out";
-      clockInText.value = "Clock In";
-      isClockedIn.value = false;
-    } catch (e) {
-      clockOutText.value = "Clock Out";
-      print('Clock-out error: $e');
-    } finally {
-      isClockingOut.value = false;
-    }
+    await _clockOutController.clockOut(
+      isClockingOut: isClockingOut,
+      clockInText: clockInText,
+      clockOutText: clockOutText,
+      isClockedIn: isClockedIn,
+      message: message,
+      messageColor: messageColor,
+    );
   }
 }

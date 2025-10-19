@@ -1,4 +1,3 @@
-
 import 'package:attendance_app/models/user_models.dart' as app_models;
 import 'package:attendance_app/services/notification_service.dart';
 import 'package:attendance_app/services/permission_service.dart';
@@ -28,12 +27,16 @@ class AuthService extends GetxService {
     }
     // Log anon key safely (first 10 characters for security)
     final anonKey = Supabase.instance.client.auth.currentSession?.accessToken;
-    print('Supabase anon key: ${anonKey != null ? anonKey.substring(0, anonKey.length > 10 ? 10 : anonKey.length) : 'null'}...');
+    print(
+      'Supabase anon key: ${anonKey != null ? anonKey.substring(0, anonKey.length > 10 ? 10 : anonKey.length) : 'null'}...',
+    );
   }
 
   Future<bool> login(String empCode, String password) async {
     print('=== LOGIN DEBUG START ===');
-    print('Attempting login with empCode: "$empCode" and password: "$password"');
+    print(
+      'Attempting login with empCode: "$empCode" and password: "$password"',
+    );
 
     final hasNetwork = await PermissionService.checkNetwork();
     if (!hasNetwork) {
@@ -59,7 +62,9 @@ class AuthService extends GetxService {
           .select('emp_code, name, role')
           .eq('emp_code', empCode);
 
-      print('Users found with emp_code "$empCode": ${userExistsResponse.length}');
+      print(
+        'Users found with emp_code "$empCode": ${userExistsResponse.length}',
+      );
       if (userExistsResponse.isNotEmpty) {
         print('User data: ${userExistsResponse.first}');
       } else {
@@ -139,7 +144,9 @@ class AuthService extends GetxService {
 
   Future<bool> login1(String empCode, String password) async {
     print('=== LOGIN DEBUG START ===');
-    print('Attempting login with empCode: "$empCode" and password: "$password"');
+    print(
+      'Attempting login with empCode: "$empCode" and password: "$password"',
+    );
 
     // Check network connectivity before attempting login
     final hasNetwork = await PermissionService.checkNetwork();
@@ -166,7 +173,9 @@ class AuthService extends GetxService {
           .select('emp_code, name, role')
           .eq('emp_code', empCode);
 
-      print('Users found with emp_code "$empCode": ${userExistsResponse.length}');
+      print(
+        'Users found with emp_code "$empCode": ${userExistsResponse.length}',
+      );
       if (userExistsResponse.isNotEmpty) {
         print('User data: ${userExistsResponse.first}');
       } else {
@@ -212,7 +221,9 @@ class AuthService extends GetxService {
       print('Login error: $e');
       print('Stack trace: $stackTrace');
       if (e.toString().contains('SocketException')) {
-        print('Network error during login. Check connectivity or Supabase URL.');
+        print(
+          'Network error during login. Check connectivity or Supabase URL.',
+        );
       }
       await NotificationService.showNotification(
         title: 'Login Error',
